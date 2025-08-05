@@ -30,6 +30,23 @@ After building, run the editor with:
 ```sh
 ./texteditor
 ```
+if you have a file:
+
+```sh
+./texteditor fileName.txt
+```
+## controls
+  esc - exit
+  
+  ctrl -s - save file
+  
+  tab - 4 spaces
+  
+  arrows - to moving around
+  
+  enter - break line
+  
+  backspace - delete char
 
 ## Features
 
@@ -41,6 +58,4 @@ After building, run the editor with:
 - GCC or compatible C compiler
 - Make
 
-## License
 
-MIT License

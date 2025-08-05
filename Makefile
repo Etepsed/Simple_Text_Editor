@@ -3,7 +3,7 @@ SRC = src/main.c\
       src/utils.c
       
 
-ExcName = TextEditor
+ExcName = texteditor
 
 all:
 	mkdir -p build
