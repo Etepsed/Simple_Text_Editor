@@ -67,22 +67,22 @@ void set_raw_mode(int enable) {
 void save_file(const char *nome_arquivo, const char *conteudo) {
   FILE *fp = fopen(nome_arquivo, "w");
   if (!fp) {
-    perror("Erro ao salvar arquivo");
+    perror("ERROR SAVING FILE");
     return;
   }
   fputs(conteudo, fp);
   fclose(fp);
 }
 
-// ANSI escape codes para limpar e mover cursor
+// ANSI escape codes for clearing and moving the cursor
 void render_buffer(const char *buffer, size_t cursor) {
-  // Limpa a tela
+  // clean screen
   printf("\033[H\033[J");
 
-  // Imprime o conteúdo
+  // print content
   printf("%s", buffer);
 
-  // Calcula a linha e a coluna do cursor
+  // calculate the cursor row and column
   size_t linha = 0, coluna = 0;
   for (size_t i = 0; i < cursor; i++) {
     if (buffer[i] == '\n') {
@@ -93,8 +93,8 @@ void render_buffer(const char *buffer, size_t cursor) {
     }
   }
 
-  // Move o cursor para a posição correta
-  printf("\033[%zu;%zuH", linha + 1, coluna + 1); // ANSI usa 1-based indexing
+  // move the cursor to the correct position
+  printf("\033[%zu;%zuH", linha + 1, coluna + 1); // ANSI use 1-based indexing
 
   fflush(stdout);
 }
@@ -115,29 +115,30 @@ void edit_buffer(char *text, const char *NameFile) {
   set_raw_mode(1);
   render_buffer(buffer, cursor);
 
-  char seq[3]; // para setas
+  char seq[3]; // for arrows
   char c;
   while (read(STDIN_FILENO, &c, 1) == 1) {
+
     if (c == 27) { // ESC sequence
-      // Torna leitura não bloqueante
+      // make reading non-blocking
       int old_flags = fcntl(STDIN_FILENO, F_GETFL, 0);
       fcntl(STDIN_FILENO, F_SETFL, old_flags | O_NONBLOCK);
 
-      usleep(10000); // pequena espera (10ms)
+      usleep(10000); // wait (10ms)
 
       int n1 = read(STDIN_FILENO, &seq[0], 1);
       int n2 = read(STDIN_FILENO, &seq[1], 1);
 
-      fcntl(STDIN_FILENO, F_SETFL, old_flags); // restaura modo original
+      fcntl(STDIN_FILENO, F_SETFL, old_flags); // restores original mode
 
       if (n1 == 1 && n2 == 1 && seq[0] == '[') {
-        if (seq[1] == 'C') { // →
+        if (seq[1] == 'C') { // > arrow right
           if (buffer[cursor] != '\0')
             cursor++;
-        } else if (seq[1] == 'D') { // ←
+        } else if (seq[1] == 'D') { // < arrow left
           if (cursor > 0)
             cursor--;
-        } else if (seq[1] == 'A') { // ↑
+        } else if (seq[1] == 'A') { // ^ arrow up
           size_t i = cursor, linha_atual_inicio = 0;
           while (i > 0) {
             if (buffer[i - 1] == '\n') {
@@ -162,7 +163,7 @@ void edit_buffer(char *text, const char *NameFile) {
                 linha_anterior_inicio +
                 (coluna < tam_linha_anterior ? coluna : tam_linha_anterior);
           }
-        } else if (seq[1] == 'B') { // ↓
+        } else if (seq[1] == 'B') { // v arrow down
           size_t i = cursor;
           while (buffer[i] != '\0' && buffer[i] != '\n')
             i++;
@@ -181,31 +182,31 @@ void edit_buffer(char *text, const char *NameFile) {
           }
         }
       } else {
-        // ESC sozinho: sai do editor
+        // ESC : exit of editor
         break;
       }
     } else if (c == 19) { // Ctrl+S
       if (FileName == NULL || strlen(FileName) == 0) {
         FileName = malloc(256);
         if (!FileName) {
-          perror("Erro ao alocar memória para o nome do arquivo");
+          perror("ERROR ALLOCATING MEMORY FOR FILE NAME");
           break;
         }
 
-        set_raw_mode(0); // desativa modo raw temporariamente
-        printf("\nDigite o nome do arquivo: ");
+        set_raw_mode(0); // temporarilly turn off raw mode
+        printf("\nEnter file Name: ");
         fflush(stdout);
         if (fgets(FileName, 256, stdin) != NULL) {
-          // Remove newline, se existir
+          // Remove newline, if exist
           FileName[strcspn(FileName, "\n")] = '\0';
         } else {
-          fprintf(stderr, "Erro ao ler nome do arquivo\n");
+          fprintf(stderr, "ERROR READING FILE NAME\n");
           free(FileName);
           FileName = NULL;
           set_raw_mode(1);
           continue;
         }
-        set_raw_mode(1); // volta ao modo raw
+        set_raw_mode(1); // turn on raw mode
       }
       save_file(FileName, buffer);
     } else if (c == 127 || c == 8) { // Backspace
@@ -214,13 +215,13 @@ void edit_buffer(char *text, const char *NameFile) {
                 strlen(&buffer[cursor]) + 1);
         cursor--;
       }
-    } else if (c == '\t') { // <-- Tab precisa estar aqui!
+    } else if (c == '\t') { // Tab
       const int tab_size = 4;
       if (strlen(buffer) + tab_size >= capacity) {
         capacity *= 2;
         buffer = realloc(buffer, capacity);
         if (!buffer) {
-          perror("Erro ao realocar memória");
+          perror("ERROR REALLOCATING MEMORY");
           break;
         }
       }
@@ -235,7 +236,7 @@ void edit_buffer(char *text, const char *NameFile) {
         capacity *= 2;
         buffer = realloc(buffer, capacity);
         if (!buffer) {
-          perror("Erro ao realocar memória");
+          perror("ERROR REALLOCATING MEMORY #2");
           break;
         }
       }
@@ -247,7 +248,7 @@ void edit_buffer(char *text, const char *NameFile) {
         capacity *= 2;
         buffer = realloc(buffer, capacity);
         if (!buffer) {
-          perror("Erro ao realocar memória");
+          perror("ERROR REALLOCATING MEMORY #3");
           break;
         }
       }
@@ -255,7 +256,6 @@ void edit_buffer(char *text, const char *NameFile) {
               strlen(&buffer[cursor]) + 1);
       buffer[cursor++] = c;
     } else if (c == 3) { // Ctrl+C
-      break;
     }
 
     render_buffer(buffer, cursor);
